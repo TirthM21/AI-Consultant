@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing - AI Consultant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --dark: #1a1a2e;
+            --light: #16213e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--light) 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--accent) !important;
+        }
+
+        .billing-container {
+            padding: 2rem 0;
+            min-height: calc(100vh - 60px);
+        }
+
+        .plan-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .plan-card.premium {
+            border: 2px solid var(--primary);
+        }
+
+        .plan-card.premium::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-bottom-left-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .plan-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .plan-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .plan-price {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-period {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+
+        .plan-features li {
+            padding: 0.75rem 0;
+            color: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .plan-features li i {
+            color: var(--primary);
+            margin-right: 0.75rem;
+        }
+
+        .btn-plan {
+            width: 100%;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-plan-outline {
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+        }
+
+        .btn-plan-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-plan-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-plan-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .history-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .history-card:hover {
+            border-color: var(--primary);
+        }
+
+        .history-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .history-date {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .status-success {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+            border: 1px solid rgba(72, 187, 120, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(246, 173, 85, 0.2);
+            color: #f6ad55;
+            border: 1px solid rgba(246, 173, 85, 0.3);
+        }
+
+        .current-plan-banner {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .alert-custom {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .plan-price {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>AI Consultant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('billing') }}">
+                            <i class="fas fa-credit-card me-1"></i> Billing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-chart-line me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container billing-container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="mb-3"><i class="fas fa-credit-card me-2"></i>Billing & Plans</h1>
+                <p class="text-muted">Manage your subscription and view payment history</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert-custom alert-{{ 'success' if category == 'success' else 'error' }}-custom">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }} me-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="current-plan-banner">
+            <h4 class="mb-2"><i class="fas fa-crown me-2"></i>Current Plan</h4>
+            <p class="mb-0">
+                {% if current_user.is_premium %}
+                    <strong>Premium Plan</strong> - 
+                    {% if current_user.subscription_end %}
+                        Expires: {{ current_user.subscription_end.strftime('%Y-%m-%d') }}
+                    {% else %}
+                        Active
+                    {% endif %}
+                {% else %}
+                    <strong>Free Plan</strong> - {{ current_user.remaining_consultations() }} consultations remaining
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="plan-card">
+                    <div class="plan-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="plan-title">Free Plan</h3>
+                    <div class="plan-price">$0</div>
+                    <div class="plan-period">forever</div>
+                    
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i>3 Consultations per month</li>
+                        <li><i class="fas fa-check"></i>Basic market analysis</li>
+                        <li><i class="fas fa-check"></i>Strategic recommendations</li>
+                        <li><i class="fas fa-check"></i>Standard support</li>
+                        <li><i class="fas fa-times text-muted"></i>Advanced reports</li>
+                    </ul>
+                    
+                    <button class="btn-plan btn-plan-outline" {% if not current_user.is_premium %}disabled{% endif %}>
+                        {% if current_user.is_premium %}Current Plan{% else %}Current Plan{% endif %}
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="plan-card premium">
+                    <div class="plan-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="plan-title">Premium Plan</h3>
+                    <div class="plan-price">$9.99</div>
+                    <div class="plan-period">per month</div>
+                    
+                    <ul class="plan-features">
+                        <li><i class="fas fa-infinity"></i>Unlimited consultations</li>
+                        <li><i class="fas fa-check"></i>Advanced market analysis</li>
+                        <li><i class="fas fa-check"></i>Strategic recommendations</li>
+                        <li><i class="fas fa-check"></i>Priority support</li>
+                        <li><i class="fas fa-check"></i>Professional reports</li>
+                        <li><i class="fas fa-check"></i>Email delivery</li>
+                    </ul>
+                    
+                    {% if current_user.is_premium %}
+                        <button class="btn-plan btn-plan-primary" disabled>
+                            <i class="fas fa-check me-2"></i>Active
+                        </button>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('upgrade') }}">
+                            <input type="hidden" name="amount" value="9.99">
+                            <input type="hidden" name="payment_method" value="credit_card">
+                            <button type="submit" class="btn-plan btn-plan-primary">
+                                <i class="fas fa-arrow-up me-2"></i>Upgrade Now
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-4"><i class="fas fa-history me-2"></i>Payment History</h3>
+                
+                {% if billing_history %}
+                    {% for billing in billing_history %}
+                        <div class="history-card">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="history-amount">
+                                        ${{ billing_amount }} {{ billing.currency }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="history-date">
+                                        <i class="far fa-clock me-1"></i>
+                                        {{ billing.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </div>
+                                    <small class="text-muted">ID: {{ billing.transaction_id[:16] }}...</small>
+                                </div>
+                                <div class="col-md-4 text-md-end">
+                                    <span class="status-badge status-{{ 'success' if billing.status == 'completed' else 'pending' }}">
+                                        <i class="fas fa-{{ 'check' if billing.status == 'completed' else 'spinner fa-spin' }} me-1"></i>
+                                        {{ billing.status|capitalize }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-receipt fa-3x mb-3"></i>
+                        <p>No payment history yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

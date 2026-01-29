@@ -124,3 +124,4 @@ Copyright © 2024. All rights reserved.
 <div align="center">
   <p>Built with ❤️ using Flask & Google Generative AI</p>
 </div># AI-Consultant
+# AI-Consultant

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Consultant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --dark: #1a1a2e;
+            --light: #16213e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--light) 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--accent) !important;
+        }
+
+        .dashboard-container {
+            padding: 2rem 0;
+            min-height: calc(100vh - 60px);
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .stats-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .consultation-form {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.875rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+            color: #fff;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 0.875rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            width: 100%;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary-custom:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-outline-custom {
+            border: 2px solid var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: var(--primary);
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .history-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .history-card:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .history-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .history-date {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+        }
+
+        .history-query {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0.5rem 0;
+            font-style: italic;
+        }
+
+        .badge-custom {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .alert-custom {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upgrade-banner {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .limit-warning {
+            background: rgba(245, 101, 101, 0.2);
+            border: 1px solid rgba(245, 101, 101, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: #f56565;
+        }
+
+        @media (max-width: 768px) {
+            .stats-number {
+                font-size: 1.5rem;
+            }
+            
+            .stats-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>AI Consultant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('billing') }}">
+                            <i class="fas fa-credit-card me-1"></i> Billing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="mb-3">Welcome, {{ current_user.name }}!</h1>
+                <p class="text-muted">Get AI-powered business insights and strategic recommendations</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert-custom alert-{{ 'success' if category == 'success' else 'error' }}-custom">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }} me-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stats-number">{{ current_user.consultations_count }}</div>
+                    <div class="stats-label">Consultations Used</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-infinity"></i>
+                    </div>
+                    <div class="stats-number">{{ current_user.remaining_consultations() }}</div>
+                    <div class="stats-label">Remaining</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stats-number">
+                        {% if current_user.is_premium %}
+                            <span class="badge-custom">Premium</span>
+                        {% else %}
+                            Free
+                        {% endif %}
+                    </div>
+                    <div class="stats-label">Account Type</div>
+                </div>
+            </div>
+        </div>
+
+        {% if not current_user.can_consult() %}
+            <div class="limit-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Limit Reached!</strong> You've reached your free consultations limit. 
+                <a href="{{ url_for('billing') }}" class="text-white fw-bold">Upgrade to Premium</a> for unlimited access.
+            </div>
+        {% endif %}
+
+        {% if not current_user.is_premium %}
+            <div class="upgrade-banner">
+                <h4 class="mb-3"><i class="fas fa-rocket me-2"></i>Upgrade to Premium</h4>
+                <p class="mb-3">Get unlimited consultations, advanced reports, and priority support</p>
+                <a href="{{ url_for('billing') }}" class="upgrade-btn btn">
+                    <i class="fas fa-arrow-up me-2"></i>Upgrade Now - $9.99/mo
+                </a>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="consultation-form">
+                    <h3 class="mb-4">
+                        <i class="fas fa-robot me-2"></i>New Consultation
+                    </h3>
+                    <form method="POST" action="{{ url_for('consult') }}">
+                        <div class="form-group mb-3">
+                            <label for="query" class="form-label">Your Business Question</label>
+                            <textarea class="form-control" id="query" name="query" rows="4" 
+                                      placeholder="E.g., I want to launch a SaaS startup for small businesses. What are the key market opportunities and risks?"
+                                      required {% if not current_user.can_consult() %}disabled{% endif %}></textarea>
+                        </div>
+
+                        {% if not current_user.can_consult() %}
+                            <button type="button" class="btn-primary-custom btn" disabled>
+                                <i class="fas fa-ban me-2"></i>Limit Reached
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn-primary-custom btn">
+                                <i class="fas fa-magic me-2"></i>Get Consultation
+                            </button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <h3 class="mb-4">
+                    <i class="fas fa-history me-2"></i>Recent Consultations
+                </h3>
+                
+                {% if consultations %}
+                    {% for consultation in consultations %}
+                        <div class="history-card">
+                            <div class="history-title">
+                                <i class="fas fa-file-alt me-2"></i>Consultation
+                                <span class="badge-custom float-end">#{{ consultation.id[:8] }}</span>
+                            </div>
+                            <div class="history-date">
+                                <i class="far fa-clock me-1"></i>
+                                {{ consultation.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </div>
+                            <div class="history-query">
+                                "{{ consultation.query[:100] }}{% if consultation.query|length > 100 %}...{% endif %}"
+                            </div>
+                            <a href="{{ url_for('consultation_detail', consultation_id=consultation.id) }}" 
+                               class="btn-outline-custom btn mt-2">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No consultations yet. Start by asking a business question!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
