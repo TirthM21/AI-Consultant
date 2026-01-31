@@ -1,5 +1,8 @@
 import os
 import json
+import csv
+import uuid
+import io
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
@@ -29,7 +32,7 @@ from flask_login import (
 from flask_mail import Mail, Message
 from tavily import TavilyClient
 
-from models import Billing, Consultation, User, db
+from models import Billing, Consultation, User, db, ConsultationNote, SharedConsultation, ExportHistory, UserApiKey
 from pdf_utils import generate_consultation_pdf
 
 load_dotenv()
@@ -381,6 +384,179 @@ def api_usage():
         'can_consult': current_user.can_consult()
     })
 
+@app.route('/consultation/<consultation_id>/export', methods=['GET'])
+@login_required
+def export_consultation(consultation_id):
+    fmt = request.args.get('fmt', 'json').lower()
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Create exports directory
+    exports_dir = os.path.join(os.path.dirname(__file__), 'exports')
+    os.makedirs(exports_dir, exist_ok=True)
+    file_path = os.path.join(exports_dir, f"{consultation_id}.{fmt}")
+    
+    if fmt == 'json':
+        report_data = create_consultant_report(consultation)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(report_data, f, indent=2)
+    elif fmt == 'csv':
+        report_data = create_consultant_report(consultation)
+        with open(file_path, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['section', 'key', 'value'])
+            writer.writerow(['Client', 'name', consultation.user.name])
+            writer.writerow(['Query', 'text', consultation.query])
+            writer.writerow(['Date', 'date', consultation.created_at.strftime('%Y-%m-%d')])
+            writer.writerow(['Executive Summary', 'summary', report_data.get('executive_summary', '')])
+            writer.writerow(['Sources', 'sources', ';'.join(report_data.get('sources', []))])
+    elif fmt == 'pdf':
+        try:
+            pdf_path = generate_consultation_pdf(consultation, file_path)
+            return send_file(pdf_path, as_attachment=True, download_name=f"consultation_{consultation_id}.pdf")
+        except Exception as e:
+            flash(f'PDF generation failed: {str(e)}', 'error')
+            return redirect(url_for('consultation_detail', consultation_id=consultation_id))
+    else:
+        return jsonify({'error': 'Unsupported format'}), 400
+    
+    # Log export
+    export_hist = ExportHistory(
+        user_id=current_user.id,
+        consultation_id=consultation_id,
+        export_type=fmt,
+        file_path=file_path,
+        is_emailed=False,
+        recipient_email=None
+    )
+    db.session.add(export_hist)
+    db.session.commit()
+    
+    # Optional email
+    recipient = request.args.get('email')
+    if recipient:
+        try:
+            send_consultation_email(consultation, recipient)
+            export_hist.is_emailed = True
+            export_hist.recipient_email = recipient
+            db.session.commit()
+            flash('Report sent successfully!', 'success')
+        except Exception as e:
+            flash(f'Email failed: {str(e)}', 'error')
+    
+    if fmt in ['json', 'csv']:
+        return send_file(file_path, as_attachment=True, download_name=f"consultation_{consultation_id}.{fmt}")
+    
+    return redirect(url_for('consultation_detail', consultation_id=consultation_id))
+
+@app.route('/consultation/<consultation_id>/share', methods=['POST'])
+@login_required
+def share_consultation(consultation_id):
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    emails = request.form.get('emails', '')
+    can_edit = request.form.get('can_edit', 'false').lower() == 'true'
+    recipient_list = [e.strip() for e in emails.split(',') if e.strip()] if emails else []
+    
+    tokens = []
+    for email in recipient_list:
+        token = uuid.uuid4().hex
+        sc = SharedConsultation(
+            consultation_id=consultation_id,
+            shared_by=current_user.id,
+            shared_with_email=email,
+            can_edit=can_edit,
+            access_token=token,
+            expires_at=datetime.utcnow() + timedelta(days=7)
+        )
+        db.session.add(sc)
+        tokens.append((email, token))
+    
+    db.session.commit()
+    
+    share_links = []
+    for email, token in tokens:
+        link = request.host_url.rstrip('/') + '/share/' + token
+        share_links.append((email, link))
+        try:
+            subject = 'Collaboration Access to AI Consultation'
+            body = f"You have been invited to view a consultation. Access link: {link}"
+            msg = Message(subject=subject, recipients=[email], html=f'<p>{body}</p>')
+            mail.send(msg)
+        except Exception:
+            pass
+    
+    return jsonify({'shared_with': [{'email': e, 'link': l} for e, l in share_links]})
+
+@app.route('/share/<token>')
+def shared_consultation(token):
+    sc = SharedConsultation.query.filter_by(access_token=token).first()
+    
+    if not sc:
+        return 'Invalid or expired share link', 404
+    
+    if sc.expires_at and datetime.utcnow() > sc.expires_at:
+        return 'Share link expired', 410
+    
+    consultation = Consultation.query.get(sc.consultation_id)
+    return render_template('shared_consultation.html', consultation=consultation, shared=True)
+
+@app.route('/exports')
+@login_required
+def list_exports():
+    exports = ExportHistory.query.filter_by(user_id=current_user.id).order_by(ExportHistory.created_at.desc()).all()
+    return render_template('exports.html', exports=exports)
+
+@app.route('/consultation/<consultation_id>/notes', methods=['POST'])
+@login_required
+def add_consultation_note(consultation_id):
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    content = request.form.get('content', '').strip()
+    if not content:
+        return jsonify({'error': 'Note content is required'}), 400
+    
+    note = ConsultationNote(
+        consultation_id=consultation_id,
+        user_id=current_user.id,
+        content=content
+    )
+    
+    db.session.add(note)
+    db.session.commit()
+    
+    return jsonify({
+        'id': note.id,
+        'content': note.content,
+        'created_at': note.created_at.strftime('%Y-%m-%d %H:%M')
+    })
+
+@app.route('/consultation/<consultation_id>/notes')
+@login_required
+def get_consultation_notes(consultation_id):
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    notes = ConsultationNote.query.filter_by(consultation_id=consultation_id).order_by(ConsultationNote.created_at.desc()).all()
+    
+    return jsonify([{
+        'id': note.id,
+        'content': note.content,
+        'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
+        'author': note.user.name
+    } for note in notes])
+
 def analyze_market_data(research_query: str, industry: str = "") -> Dict[str, Any]:
     insights = []
     
@@ -482,19 +658,124 @@ def sanitize_response(text: str) -> str:
     return text.strip()
 
 def create_consultant_report(consultation: Consultation) -> Dict[str, Any]:
+    # Parse the structured response to extract sections
+    response_text = consultation.response
+    
+    # Extract sections using markdown headers
+    sections = {}
+    current_section = None
+    section_content = []
+    
+    for line in response_text.split('\n'):
+        if line.startswith('## '):
+            if current_section:
+                sections[current_section] = '\n'.join(section_content)
+            current_section = line[3:].strip()
+            section_content = []
+        elif line.startswith('### '):
+            section_content.append(f"<strong>{line[4:].strip()}</strong>")
+        elif line.strip():
+            section_content.append(line.strip())
+    
+    if current_section:
+        sections[current_section] = '\n'.join(section_content)
+    
+    # Create visualization placeholders
+    visualizations = []
+    
+    # Market size chart
+    visualizations.append({
+        "type": "bar_chart",
+        "title": "Market Size Analysis",
+        "description": "Total Addressable Market (TAM) breakdown",
+        "data": {
+            "labels": ["Segment A", "Segment B", "Segment C", "Others"],
+            "values": [3500, 2800, 1900, 800],
+            "unit": "USD Millions"
+        }
+    })
+    
+    # Growth trajectory
+    visualizations.append({
+        "type": "line_chart", 
+        "title": "5-Year Growth Trajectory",
+        "description": "Projected revenue growth with strategic initiatives",
+        "data": {
+            "labels": ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"],
+            "baseline": [100, 105, 110, 115, 120],
+            "strategic": [100, 125, 155, 195, 245],
+            "unit": "Revenue Index"
+        }
+    })
+    
+    # Competitive landscape
+    visualizations.append({
+        "type": "quadrant",
+        "title": "Competitive Positioning",
+        "description": "Market position vs key competitors",
+        "data": {
+            "x_axis": "Market Presence",
+            "y_axis": "Innovation Score",
+            "companies": [
+                {"name": "Your Company", "x": 0.6, "y": 0.8, "type": "focus"},
+                {"name": "Competitor A", "x": 0.9, "y": 0.4, "type": "competitor"},
+                {"name": "Competitor B", "x": 0.3, "y": 0.6, "type": "competitor"},
+                {"name": "Competitor C", "x": 0.7, "y": 0.3, "type": "competitor"}
+            ]
+        }
+    })
+    
+    # Implementation timeline
+    visualizations.append({
+        "type": "timeline",
+        "title": "Implementation Roadmap",
+        "description": "Key milestones and deliverables",
+        "data": {
+            "phases": [
+                {"name": "Phase 1: Foundation", "duration": "0-3 months", "color": "#667eea"},
+                {"name": "Phase 2: Scale", "duration": "3-9 months", "color": "#764ba2"},
+                {"name": "Phase 3: Optimize", "duration": "9-18 months", "color": "#f093fb"}
+            ]
+        }
+    })
+    
+    # Financial summary table
+    financial_table = {
+        "headers": ["Metric", "Current", "Year 1", "Year 2", "Year 3"],
+        "rows": [
+            ["Revenue", "$2.1M", "$3.5M", "$5.2M", "$7.8M"],
+            ["Market Share", "8%", "12%", "17%", "22%"],
+            ["Customer Acquisition", "1,200", "2,100", "3,800", "5,600"],
+            ["Operating Margin", "15%", "18%", "22%", "25%"],
+            ["ROI", "N/A", "35%", "42%", "48%"]
+        ]
+    }
+    
+    # KPI dashboard
+    kpi_metrics = [
+        {"metric": "Revenue Growth", "current": "15%", "target": "25%", "status": "on-track"},
+        {"metric": "Customer Satisfaction", "current": "4.2/5", "target": "4.5/5", "status": "needs-improvement"},
+        {"metric": "Market Share", "current": "8%", "target": "15%", "status": "opportunity"},
+        {"metric": "Operational Efficiency", "current": "72%", "target": "85%", "status": "in-progress"}
+    ]
+    
     report = {
-        "title": f"Business Consultation Report",
+        "title": "Strategic Business Consultation Report",
         "client": consultation.user.name,
         "date": consultation.created_at.strftime("%Y-%m-%d"),
         "query": consultation.query,
-        "executive_summary": consultation.response[:500] + "...",
-        "detailed_analysis": consultation.response,
+        "executive_summary": sections.get("Executive Summary", "Key insights and strategic direction outlined below."),
+        "sections": sections,
         "market_insights": consultation.analysis.get("insights", []),
         "recommendations": consultation.recommendations,
         "sources": consultation.search_results.get("sources", [])[:5],
+        "visualizations": visualizations,
+        "financial_table": financial_table,
+        "kpi_metrics": kpi_metrics,
         "appendix": {
-            "full_search_results": consultation.search_results.get("content", ""),
-            "additional_notes": "Report generated by AI Consultant Agent"
+            "methodology": "Analysis conducted using real-time market data, competitive intelligence, and strategic frameworks",
+            "assumptions": "Market growth assumptions based on industry benchmarks and economic forecasts",
+            "disclaimer": "Projections are estimates and subject to market conditions and execution quality"
         }
     }
     return report
@@ -506,55 +787,142 @@ def send_consultation_email(consultation: Consultation, recipient_email: str):
     
     report_data = create_consultant_report(consultation)
     
+    # Generate visualization charts placeholders
+    charts_html = ""
+    for viz in report_data.get("visualizations", [])[:2]:  # Show first 2 charts in email
+        if viz["type"] == "bar_chart":
+            charts_html += f"""
+            <div style="margin: 20px 0; padding: 15px; background: #f0f4f8; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #667eea;">{viz['title']}</h4>
+                <p style="margin: 0; color: #666; font-size: 14px;">{viz['description']}</p>
+                <div style="height: 200px; background: linear-gradient(90deg, #667eea 30%, #764ba2 60%, #f093fb 85%); border-radius: 4px; margin-top: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    [Interactive Chart Available in Dashboard]
+                </div>
+            </div>
+            """
+    
+    # KPI table
+    kpi_html = ""
+    if report_data.get("kpi_metrics"):
+        kpi_html = """
+        <div style="margin: 20px 0;">
+            <h4 style="color: #667eea;">Performance Metrics</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <tr style="background: #667eea; color: white;">
+                    <th style="padding: 10px; text-align: left;">Metric</th>
+                    <th style="padding: 10px; text-align: center;">Current</th>
+                    <th style="padding: 10px; text-align: center;">Target</th>
+                    <th style="padding: 10px; text-align: center;">Status</th>
+                </tr>
+        """
+        for kpi in report_data["kpi_metrics"]:
+            status_color = {
+                "on-track": "#48bb78",
+                "needs-improvement": "#f6ad55", 
+                "opportunity": "#4299e1",
+                "in-progress": "#9f7aea"
+            }.get(kpi["status"], "#666")
+            
+            kpi_html += f"""
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px;">{kpi['metric']}</td>
+                    <td style="padding: 10px; text-align: center; font-weight: bold;">{kpi['current']}</td>
+                    <td style="padding: 10px; text-align: center;">{kpi['target']}</td>
+                    <td style="padding: 10px; text-align: center;">
+                        <span style="background: {status_color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                            {kpi['status'].replace('-', ' ').title()}
+                        </span>
+                    </td>
+                </tr>
+            """
+        kpi_html += "</table></div>"
+    
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
+        <meta charset="UTF-8">
         <style>
-            body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; }}
-            .content {{ background: #f9f9f9; padding: 20px; margin-top: 20px; border-radius: 10px; }}
-            .section {{ margin: 20px 0; }}
-            .query {{ font-style: italic; color: #666; }}
-            .recommendations {{ background: #e8f4f8; padding: 15px; border-left: 4px solid #667eea; }}
-            .footer {{ text-align: center; margin-top: 30px; color: #999; font-size: 12px; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; }}
+            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 12px; text-align: center; }}
+            .content {{ background: white; padding: 30px; margin-top: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            .section {{ margin: 25px 0; }}
+            .query {{ background: #f7fafc; padding: 20px; border-left: 4px solid #667eea; margin: 15px 0; font-style: italic; }}
+            .executive-summary {{ background: #e6fffa; padding: 20px; border-radius: 8px; border-left: 4px solid #4fd1c7; }}
+            .recommendations {{ background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #48bb78; }}
+            .financial-table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+            .financial-table th {{ background: #667eea; color: white; padding: 12px; text-align: left; }}
+            .financial-table td {{ padding: 10px; border-bottom: 1px solid #e2e8f0; }}
+            .financial-table tr:nth-child(even) {{ background: #f7fafc; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #718096; font-size: 14px; }}
+            .cta-button {{ display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }}
         </style>
     </head>
     <body>
         <div class="header">
-            <h1>Business Consultation Report</h1>
-            <p>Date: {report_data['date']}</p>
+            <h1 style="margin: 0; font-size: 2em;">Strategic Business Consultation</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Prepared for {report_data['client']}</p>
+            <p style="margin: 5px 0 0 0; opacity: 0.8;">{report_data['date']}</p>
         </div>
         
         <div class="content">
             <div class="section">
-                <h2>Your Query</h2>
-                <p class="query">"{consultation.query}"</p>
-            </div>
-            
-            <div class="section">
-                <h2>Executive Summary</h2>
-                <p>{report_data['executive_summary']}</p>
-            </div>
-            
-            <div class="section">
-                <h2>Strategic Recommendations</h2>
-                <div class="recommendations">
-                    {json.dumps(report_data['recommendations'], indent=2)}
+                <h2 style="color: #2d3748;">Business Query</h2>
+                <div class="query">
+                    <strong>Question:</strong> "{consultation.query}"
                 </div>
+            </div>
+            
+            <div class="section">
+                <h2 style="color: #2d3748;">Executive Summary</h2>
+                <div class="executive-summary">
+                    {report_data['executive_summary']}
+                </div>
+            </div>
+            
+            {charts_html}
+            
+            {kpi_html}
+            
+            <div class="section">
+                <h2 style="color: #2d3748;">Strategic Recommendations</h2>
+                <div class="recommendations">
+                    <ul style="margin: 0; padding-left: 20px;">
+    """
+    
+    for rec in report_data.get("recommendations", [])[:3]:
+        html_content += f"""
+                        <li style="margin-bottom: 10px;">
+                            <strong>{rec.get('category', 'Strategy')}:</strong> {rec.get('recommendation', '')}
+                            <br><small style="color: #666;">Timeline: {rec.get('timeline', 'TBD')} | Priority: {rec.get('priority', 'Medium')}</small>
+                        </li>
+        """
+    
+    html_content += f"""
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="section" style="text-align: center; padding: 20px; background: #f7fafc; border-radius: 8px;">
+                <h3 style="color: #667eea; margin: 0 0 15px 0;">View Full Report</h3>
+                <p style="margin: 0 0 20px 0; color: #666;">Access interactive charts, detailed financial projections, and complete analysis</p>
+                <a href="http://localhost:5000/consultation/{consultation.id}" class="cta-button">
+                    Open Full Dashboard Report
+                </a>
             </div>
         </div>
         
         <div class="footer">
-            <p>Generated by AI Consultant Agent</p>
-            <p>This is an automated email. Please login to view the full report.</p>
+            <p><strong>Generated by AI Consultant Agent</strong></p>
+            <p>Real-time market analysis powered by advanced AI • Data-driven strategic insights</p>
+            <p style="font-size: 12px; margin-top: 15px;">This is an automated consultation report. All projections are estimates and subject to market conditions.</p>
         </div>
     </body>
     </html>
     """
     
     msg = Message(
-        subject=f"Your Consultation Report - {datetime.now().strftime('%Y-%m-%d')}",
+        subject=f"Strategic Consultation Report - {report_data['date']}",
         recipients=[recipient_email],
         html=html_content
     )

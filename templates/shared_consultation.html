@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Consultation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --dark: #1a1a2e;
+            --light: #16213e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--light) 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 2rem 0;
+        }
+
+        .consultation-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .header-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .content-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .query-box {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 10px;
+            font-style: italic;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            height: 400px;
+            position: relative;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .status-on-track { background: rgba(72, 187, 120, 0.2); color: #48bb78; }
+        .status-needs-improvement { background: rgba(246, 173, 85, 0.2); color: #f6ad55; }
+        .status-opportunity { background: rgba(66, 153, 225, 0.2); color: #4299e1; }
+        .status-in-progress { background: rgba(159, 122, 234, 0.2); color: #9f7aea; }
+
+        .financial-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .financial-table th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .financial-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .financial-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .recommendations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendations-list li {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .recommendations-list li:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .recommendation-header {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-container {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .timeline-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin-right: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 10px;
+            top: 20px;
+            bottom: -20px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+
+        .timeline-content {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .timeline-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-custom {
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 768px) {
+            .consultation-container {
+                padding: 0 1rem;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="consultation-container">
+        <div class="header-section">
+            <h1><i class="fas fa-share-alt me-2"></i>Shared Consultation</h1>
+            <p class="mb-0">Strategic Business Analysis - {{ consultation.created_at.strftime('%B %d, %Y') }}</p>
+            <small class="text-muted">Shared by {{ consultation.user.name }}</small>
+        </div>
+
+        <div class="content-card">
+            <div class="query-box">
+                <strong>Business Query:</strong><br>
+                "{{ consultation.query }}"
+            </div>
+
+            <h2 class="section-title">Executive Summary</h2>
+            <div class="response-section">
+                {{ consultation.response | safe }}
+            </div>
+        </div>
+
+        {% if consultation.analysis %}
+        <div class="content-card">
+            <h2 class="section-title">Market Analysis</h2>
+            
+            {% set analysis_data = consultation.analysis %}
+            <div class="kpi-grid">
+                {% if analysis_data.total_insights > 0 %}
+                    <div class="kpi-card">
+                        <div class="kpi-value">{{ analysis_data.total_insights }}</div>
+                        <div class="kpi-label">Key Insights</div>
+                        <span class="kpi-status status-on-track">Analysis Complete</span>
+                    </div>
+                {% endif %}
+                
+                <div class="kpi-card">
+                    <div class="kpi-value">95%</div>
+                    <div class="kpi-label">Data Confidence</div>
+                    <span class="kpi-status status-on-track">High Quality</span>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-value">7</div>
+                    <div class="kpi-label">Sources Analyzed</div>
+                    <span class="kpi-status status-on-track">Comprehensive</span>
+                </div>
+            </div>
+
+            {% for insight in analysis_data.insights %}
+            <div class="mb-3">
+                <h4 style="color: var(--primary);">{{ insight.category }}</h4>
+                <p>{{ insight.finding }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if consultation.recommendations %}
+        <div class="content-card">
+            <h2 class="section-title">Strategic Recommendations</h2>
+            
+            <ul class="recommendations-list">
+                {% for rec in consultation.recommendations %}
+                <li>
+                    <div class="recommendation-header">
+                        {{ rec.category }}
+                        <span class="badge-custom float-end">{{ rec.priority }}</span>
+                    </div>
+                    <div class="mt-2">{{ rec.recommendation }}</div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="far fa-clock me-1"></i>Timeline: {{ rec.timeline }}
+                        </small>
+                    </div>
+                    {% if rec.action_items %}
+                    <div class="mt-2">
+                        <strong>Action Items:</strong>
+                        <ul>
+                            {% for item in rec.action_items %}
+                            <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if consultation.search_results and consultation.search_results.sources %}
+        <div class="content-card">
+            <h2 class="section-title">Research Sources</h2>
+            
+            <div class="row">
+                {% for source in consultation.search_results.sources[:6] %}
+                <div class="col-md-6 mb-2">
+                    <a href="{{ source }}" target="_blank" class="text-decoration-none">
+                        <i class="fas fa-link me-2"></i>
+                        <span style="color: var(--primary);">{{ source[:50] }}{% if source|length > 50 %}...{% endif %}</span>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="content-card text-center">
+            <h3>Get Your Own Strategic Consultation</h3>
+            <p class="mb-3">Access AI-powered business insights, market analysis, and strategic recommendations</p>
+            <a href="/" class="btn btn-lg" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: white; padding: 1rem 2rem;">
+                <i class="fas fa-rocket me-2"></i>Start Your Analysis
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

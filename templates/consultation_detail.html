@@ -361,19 +361,20 @@
 
         <div class="action-buttons">
             <button id="generate-report-btn" class="btn-report btn btn-action">
-                <i class="fas fa-clipboard-list me-2"></i>Generate Summary
+                <i class="fas fa-chart-bar me-2"></i>Generate Report
             </button>
             <button id="email-report-btn" class="btn-email btn btn-action">
                 <i class="fas fa-envelope me-2"></i>Email Report
             </button>
-            <a href="{{ url_for('consultation_pdf', consultation_id=consultation.id) }}"
-               class="btn-report btn btn-action">
-                <i class="fas fa-file-pdf me-2"></i>Download PDF
-            </a>
-            <a href="{{ url_for('export_consultation_json', consultation_id=consultation.id) }}"
-               class="btn-email btn btn-action">
-                <i class="fas fa-code me-2"></i>Export JSON
-            </a>
+            <button class="btn-action" onclick="window.open('{{ url_for('export_consultation', consultation_id=consultation.id, fmt='json') }}')">
+                <i class="fas fa-file-export me-2"></i>Export JSON
+            </button>
+            <button class="btn-action" onclick="window.open('{{ url_for('export_consultation', consultation_id=consultation.id, fmt='pdf') }}')">
+                <i class="fas fa-file-pdf me-2"></i>Export PDF
+            </button>
+            <button class="btn-action" data-bs-toggle="modal" data-bs-target="#shareModal">
+                <i class="fas fa-share-alt me-2"></i>Share
+            </button>
         </div>
 
         <div class="detail-card">
