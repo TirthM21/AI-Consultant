@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McKinsey Deck Preview - AI Consultant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --mckinsey-blue: #00263A;
+            --mckinsey-light-blue: #00A4E4;
+            --mckinsey-orange: #FF6B35;
+            --mckinsey-gray: #8B9697;
+            --bg-dark: #1a1a2e;
+            --bg-light: #16213e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-light) 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .deck-preview-container {
+            padding: 2rem 0;
+        }
+
+        .preview-header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .engagement-id {
+            background: var(--mckinsey-light-blue);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .deck-actions {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, var(--mckinsey-blue), var(--mckinsey-light-blue));
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: bold;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 164, 228, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 164, 228, 0.5);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--mckinsey-light-blue);
+        }
+
+        .secondary-btn:hover {
+            background: var(--mckinsey-light-blue);
+            color: white;
+        }
+
+        .deck-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--mckinsey-light-blue);
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--mckinsey-light-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        .deck-structure {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .slide-preview {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .slide-preview:hover {
+            border-color: var(--mckinsey-light-blue);
+            transform: translateX(5px);
+        }
+
+        .slide-number {
+            background: var(--mckinsey-blue);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .slide-title {
+            font-weight: bold;
+            color: var(--mckinsey-light-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-placeholder {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid var(--mckinsey-light-blue);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .research-highlights {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .source-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .source-item:hover {
+            border-color: var(--mckinsey-light-blue);
+        }
+
+        .source-title {
+            font-weight: bold;
+            color: var(--mckinsey-light-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .source-url {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>AI Consultant
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Consultation
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container deck-preview-container">
+        <div class="preview-header">
+            <h1><i class="fas fa-chart-line me-2"></i>McKinsey-Style Deck Preview</h1>
+            <p class="mb-3">Professional consulting presentation based on real market research</p>
+            <div class="engagement-id">
+                Engagement ID: {% if deck_data %}{{ deck_data.engagement_id[:8] }}...{% else %}Not Generated{% endif %}
+            </div>
+        </div>
+
+        {% if has_existing_deck %}
+            <div class="deck-stats">
+                <div class="stat-card">
+                    <div class="stat-number">{{ deck_data.deck_metadata.total_slides if deck_data.deck_metadata else 'N/A' }}</div>
+                    <div class="stat-label">Total Slides</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ deck_data.deck_metadata.research_sources if deck_data.deck_metadata else 'N/A' }}</div>
+                    <div class="stat-label">Research Sources</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ deck_data.deck_metadata.complexity|title if deck_data.deck_metadata else 'N/A' }}</div>
+                    <div class="stat-label">Complexity</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ deck_data.created_at.strftime('%m/%d') if deck_data.created_at else 'N/A' }}</div>
+                    <div class="stat-label">Generated</div>
+                </div>
+            </div>
+
+            <div class="deck-actions">
+                <h3 class="mb-4"><i class="fas fa-download me-2"></i>Download Generated Assets</h3>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="{{ url_for('generate_mckinsey_deck', consultation_id=consultation.id) }}" class="action-btn">
+                        <i class="fas fa-file-powerpoint me-2"></i>PowerPoint Deck
+                    </a>
+                    <a href="{{ url_for('generate_comprehensive_report', consultation_id=consultation.id) }}" class="action-btn">
+                        <i class="fas fa-file-pdf me-2"></i>Comprehensive Report
+                    </a>
+                    <button class="action-btn secondary-btn" onclick="shareDeck()">
+                        <i class="fas fa-share-alt me-2"></i>Share Deck
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <div class="loading-placeholder">
+                <div class="spinner"></div>
+                <h4>No McKinsey deck generated yet</h4>
+                <p class="text-muted">Generate a comprehensive consulting presentation with real market research</p>
+            </div>
+
+            <div class="deck-actions">
+                <h3 class="mb-4"><i class="fas fa-magic me-2"></i>Generate McKinsey Deck</h3>
+                <p class="mb-4">Create a professional 10-15 slide deck with real market research, data visualizations, and strategic recommendations</p>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <button class="action-btn" onclick="generateDeck('standard')">
+                        <i class="fas fa-rocket me-2"></i>Generate Standard Deck
+                    </button>
+                    <button class="action-btn secondary-btn" onclick="generateDeck('comprehensive')">
+                        <i class="fas fa-chart-bar me-2"></i>Generate Comprehensive Analysis
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="research-highlights">
+            <h3><i class="fas fa-search me-2"></i>Research Methodology</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="source-item">
+                        <div class="source-title"><i class="fas fa-globe me-2"></i>Market Intelligence</div>
+                        <div class="source-url">Real-time market sizing and growth analysis via Tavily API</div>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-title"><i class="fas fa-chart-line me-2"></i>Competitive Analysis</div>
+                        <div class="source-url">Competitor positioning and market share assessment</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="source-item">
+                        <div class="source-title"><i class="fas fa-brain me-2"></i>AI-Powered Insights</div>
+                        <div class="source-url">Gemini 2.0 Flash for strategic content generation</div>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-title"><i class="fas fa-shield-alt me-2"></i>Data Validation</div>
+                        <div class="source-url">Cross-referenced with multiple credible sources</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if has_existing_deck %}
+            <div class="deck-structure">
+                <h3><i class="fas fa-layer-group me-2"></i>Deck Structure Preview</h3>
+                
+                <!-- Sample slide previews -->
+                <div class="slide-preview">
+                    <div class="slide-number">01</div>
+                    <div class="slide-title">Title & Executive Summary</div>
+                    <small class="text-muted">Action-oriented title with core hypothesis</small>
+                </div>
+                
+                <div class="slide-preview">
+                    <div class="slide-number">02</div>
+                    <div class="slide-title">Market Opportunity Analysis</div>
+                    <small class="text-muted">Total addressable market with growth projections</small>
+                </div>
+                
+                <div class="slide-preview">
+                    <div class="slide-number">03</div>
+                    <div class="slide-title">Competitive Landscape</div>
+                    <small class="text-muted">2x2 positioning matrix with key players</small>
+                </div>
+                
+                <div class="slide-preview">
+                    <div class="slide-number">04-10</div>
+                    <div class="slide-title">Strategic Recommendations & Implementation</div>
+                    <small class="text-muted">Data-driven insights with actionable roadmap</small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function generateDeck(type) {
+            const consultationId = '{{ consultation.id }}';
+            let url;
+            
+            if (type === 'standard') {
+                url = `/consultation/${consultationId}/mckinsey-deck`;
+            } else {
+                url = `/consultation/${consultationId}/comprehensive-report`;
+            }
+            
+            // Show loading state
+            window.location.href = url;
+        }
+        
+        function shareDeck() {
+            const consultationId = '{{ consultation.id }}';
+            const shareUrl = `${window.location.origin}/share/${consultationId}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'McKinsey Consulting Deck',
+                    text: 'Check out this comprehensive business analysis',
+                    url: shareUrl
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert('Share link copied to clipboard!');
+                });
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

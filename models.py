@@ -138,3 +138,20 @@ class ExportHistory(db.Model):
     
     def __repr__(self):
         return f'<ExportHistory {self.export_type}>'
+
+class DeckGeneration(db.Model):
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    consultation_id = db.Column(db.String(36), db.ForeignKey('consultation.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    engagement_id = db.Column(db.String(36), nullable=False, unique=True)
+    deck_type = db.Column(db.String(50), nullable=False)  # mckinsey_comprehensive, standard
+    pptx_path = db.Column(db.String(500), nullable=True)
+    pdf_path = db.Column(db.String(500), nullable=True)
+    deck_metadata = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    consultation = db.relationship('Consultation', backref='deck_generations')
+    user = db.relationship('User', backref='deck_generations')
+    
+    def __repr__(self):
+        return f'<DeckGeneration {self.engagement_id[:8]}...>'

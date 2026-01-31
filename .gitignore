@@ -1,1 +1,57 @@
+# Environment and Secrets
 .env
+.env.*
+!.env.example
+
+# Python System Files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project Specific Artefacts
+outputs/
+exports/
+*.pptx
+*.pdf
+!templates/*.pdf
+
+# Database Files
+instance/
+*.sqlite
+*.db
+
+# IDE and OS Files
+.vscode/
+.idea/
+.project
+.pydevproject
+.settings/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

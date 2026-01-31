@@ -32,8 +32,10 @@ from flask_login import (
 from flask_mail import Mail, Message
 from tavily import TavilyClient
 
-from models import Billing, Consultation, User, db, ConsultationNote, SharedConsultation, ExportHistory, UserApiKey
+from models import Billing, Consultation, User, db, ConsultationNote, SharedConsultation, ExportHistory, UserApiKey, DeckGeneration
 from pdf_utils import generate_consultation_pdf
+from mckinsey_report_generator import McKinseyReportGenerator
+from advanced_deck_generator import McKinseyDeckGenerator
 
 load_dotenv()
 
@@ -64,6 +66,15 @@ TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 
 genai.configure(api_key=API_KEY)
 tavily_client = TavilyClient(TAVILY_API_KEY)
+
+# Initialize McKinsey Deck Generator
+deck_generator = McKinseyDeckGenerator(API_KEY, TAVILY_API_KEY)
+
+# Initialize McKinsey Report Generator
+report_generator = McKinseyReportGenerator()
+
+# Import Fully Dynamic Deck Generator
+from fully_dynamic_deck_generator import FullyDynamicMcKinseyGenerator
 
 @dataclass
 class MarketInsight:
@@ -556,6 +567,118 @@ def get_consultation_notes(consultation_id):
         'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
         'author': note.user.name
     } for note in notes])
+
+@app.route('/consultation/<consultation_id>/mckinsey-deck')
+@login_required
+def generate_mckinsey_deck(consultation_id):
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Generate fully dynamic McKinsey deck with real research
+        dynamic_deck = deck_generator.generate_fully_dynamic_deck(
+            consultation.query,
+            consultation.user.name
+        )
+        
+        # Save fully dynamic deck metadata to database
+        deck_record = DeckGeneration(
+            consultation_id=consultation_id,
+            user_id=current_user.id,
+            engagement_id=dynamic_deck['engagement_id'],
+            deck_type='fully_dynamic_mckinsey',
+            pptx_path=dynamic_deck['files']['powerpoint'],
+            pdf_path=dynamic_deck['files']['pdf_report'],
+            deck_metadata=dynamic_deck['metadata'],
+            created_at=datetime.utcnow()
+        )
+        db.session.add(deck_record)
+        db.session.commit()
+        
+        # Save dynamic research data for transparency
+        research_data_path = f"outputs/{dynamic_deck['engagement_id']}_dynamic_research_data.json"
+        os.makedirs("outputs", exist_ok=True)
+        with open(research_data_path, 'w') as f:
+            json.dump({
+                'market_data': dynamic_deck['market_data'].__dict__ if hasattr(dynamic_deck['market_data'], '__dict__') else str(dynamic_deck['market_data']),
+                'sources': dynamic_deck['market_data'].primary_sources if hasattr(dynamic_deck['market_data'], 'primary_sources') else [],
+                'engagement_id': dynamic_deck['engagement_id']
+            }, f, indent=2)
+        
+        # Return to PowerPoint file
+        return send_file(
+            dynamic_deck['files']['powerpoint'],
+            as_attachment=True,
+            download_name=f"Dynamic_McKinsey_Deck_{consultation.user.name.replace(' ', '_')}_{dynamic_deck['engagement_id'][:8]}.pptx"
+        )
+        
+    except Exception as e:
+        print(f"McKinsey deck generation error: {str(e)}")
+        flash(f'Deck generation failed: {str(e)}', 'error')
+        return redirect(url_for('consultation_detail', consultation_id=consultation_id))
+
+@app.route('/consultation/<consultation_id>/comprehensive-report')
+@login_required
+def generate_comprehensive_report(consultation_id):
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Generate comprehensive research report
+        deck_package = deck_generator.generate_comprehensive_deck(
+            consultation.query,
+            consultation.user.name
+        )
+        
+        # Generate comprehensive PDF report using professional generator
+        report_path = report_generator.generate_comprehensive_report(
+            consultation.query,
+            consultation.user.name,
+            deck_package['market_data'],
+            deck_package['deck_structure'],
+            deck_package['content_slides']
+        )
+        
+        # Return the comprehensive PDF report
+        return send_file(
+            report_path,
+            as_attachment=True,
+            download_name=f"Comprehensive_Analysis_{consultation.user.name.replace(' ', '_')}_{deck_package['engagement_id'][:8]}.pdf"
+        )
+        
+    except Exception as e:
+        print(f"Comprehensive report generation error: {str(e)}")
+        flash(f'Report generation failed: {str(e)}', 'error')
+        return redirect(url_for('consultation_detail', consultation_id=consultation_id))
+
+@app.route('/consultation/<consultation_id>/deck-preview')
+@login_required
+def deck_preview(consultation_id):
+    consultation = Consultation.query.get_or_404(consultation_id)
+    
+    if consultation.user_id != current_user.id:
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Check if deck already exists
+    from models import DeckGeneration
+    existing_deck = DeckGeneration.query.filter_by(consultation_id=consultation_id).first()
+    
+    if existing_deck:
+        return render_template('deck_preview.html', 
+                           consultation=consultation, 
+                           deck_data=existing_deck,
+                           has_existing_deck=True)
+    else:
+        return render_template('deck_preview.html', 
+                           consultation=consultation, 
+                           has_existing_deck=False)
 
 def analyze_market_data(research_query: str, industry: str = "") -> Dict[str, Any]:
     insights = []

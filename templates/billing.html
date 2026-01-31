@@ -4,394 +4,637 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Billing - AI Consultant</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* --- ACETERNITY X BINANCE THEME VARIABLES --- */
         :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --accent: #f093fb;
-            --dark: #1a1a2e;
-            --light: #16213e;
+            --bg-body: #000000;
+            --bg-card: rgba(20, 20, 23, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #EAECEF;
+            --text-muted: #848E9C;
+            
+            /* Binance Gold / Yellow */
+            --brand-gold: #FCD535;
+            --brand-gold-dim: #B89F1E;
+            --brand-glow: rgba(252, 213, 53, 0.15);
+            
+            /* Status Colors */
+            --color-success: #0ECB81;
+            --color-warning: #F0B90B;
+            --color-error: #F6465D;
+            --color-primary: #FCD535;
+
+            --font-main: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* --- GLOBAL RESET & BACKGROUND --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--light) 100%);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-main);
             min-height: 100vh;
-            color: #fff;
+            position: relative;
+            overflow-x: hidden;
         }
 
+        /* Subtle Grid Background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- NAVBAR --- */
         .navbar {
-            background: rgba(255, 255, 255, 0.05) !important;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .navbar-brand {
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: bold;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand i {
+            color: var(--brand-gold);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
         }
 
         .nav-link {
-            color: rgba(255, 255, 255, 0.8) !important;
-            transition: all 0.3s ease;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
         }
 
-        .nav-link:hover {
-            color: var(--accent) !important;
+        .nav-link:hover, .nav-link.active {
+            color: var(--brand-gold);
         }
 
-        .billing-container {
-            padding: 2rem 0;
-            min-height: calc(100vh - 60px);
+        /* --- LAYOUT UTILS --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
         }
 
-        .plan-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 2rem;
-            transition: all 0.3s ease;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
+        .header-section {
+            margin-bottom: 3rem;
         }
 
-        .plan-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .plan-card.premium {
-            border: 2px solid var(--primary);
-        }
-
-        .plan-card.premium::before {
-            content: 'MOST POPULAR';
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 0.5rem 1rem;
-            border-bottom-left-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .plan-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(180deg, #fff, #888);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .plan-title {
+        .page-desc {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* --- SPOTLIGHT CARDS (Aceternity Style) --- */
+        .spotlight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            /* The radial gradient is set via JS */
+            background-image: radial-gradient(
+                800px circle at var(--mouse-x) var(--mouse-y),
+                rgba(255, 255, 255, 0.06),
+                transparent 40%
+            );
+        }
+        
+        .spotlight-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- CURRENT PLAN BANNER --- */
+        .current-plan-card {
+            margin-bottom: 3rem;
+            border: 1px solid rgba(252, 213, 53, 0.3);
+            background: radial-gradient(circle at top right, rgba(252, 213, 53, 0.1), transparent 50%), var(--bg-card);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-icon-box {
+            width: 48px;
+            height: 48px;
+            background: rgba(252, 213, 53, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-gold);
+            font-size: 1.2rem;
+        }
+
+        .status-info h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--brand-gold);
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .status-info p {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .status-meta {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 10px;
+        }
+
+        /* --- PRICING GRID --- */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .plan-badge {
+            position: absolute;
+            top: -1px; right: 20px;
+            background: var(--brand-gold);
+            color: #000;
+            padding: 5px 15px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            box-shadow: 0 4px 12px rgba(252, 213, 53, 0.3);
+        }
+
+        .plan-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-name {
             font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .plan-price {
-            font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 5px;
         }
 
-        .plan-period {
-            color: rgba(255, 255, 255, 0.7);
+        .plan-price span {
             font-size: 1rem;
-            margin-bottom: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
         }
 
-        .plan-features {
-            list-style: none;
-            padding: 0;
-            margin: 1.5rem 0;
-        }
-
-        .plan-features li {
-            padding: 0.75rem 0;
-            color: rgba(255, 255, 255, 0.9);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .plan-features li i {
-            color: var(--primary);
-            margin-right: 0.75rem;
-        }
-
-        .btn-plan {
-            width: 100%;
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-
-        .btn-plan-outline {
-            border: 2px solid var(--primary);
-            background: transparent;
-            color: var(--primary);
-        }
-
-        .btn-plan-outline:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-plan-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-plan-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-
-        .history-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .history-card:hover {
-            border-color: var(--primary);
-        }
-
-        .history-amount {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .history-date {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.875rem;
-        }
-
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-        }
-
-        .status-success {
-            background: rgba(72, 187, 120, 0.2);
-            color: #48bb78;
-            border: 1px solid rgba(72, 187, 120, 0.3);
-        }
-
-        .status-pending {
-            background: rgba(246, 173, 85, 0.2);
-            color: #f6ad55;
-            border: 1px solid rgba(246, 173, 85, 0.3);
-        }
-
-        .current-plan-banner {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-            border: 1px solid var(--primary);
-            border-radius: 15px;
-            padding: 1.5rem;
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             margin-bottom: 2rem;
         }
 
-        .alert-custom {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        .feature-item i {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .feature-item.active i {
+            color: var(--color-success);
+        }
+
+        .feature-item.gold i {
+            color: var(--brand-gold);
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            width: 100%;
             padding: 1rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover:not(:disabled) {
+            border-color: var(--text-main);
+            color: var(--text-main);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .btn-gold {
+            background: linear-gradient(180deg, var(--brand-gold) 0%, var(--brand-gold-dim) 100%);
+            color: #000;
+            box-shadow: 0 0 15px var(--brand-glow);
+        }
+
+        .btn-gold:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px var(--brand-glow);
+        }
+
+        /* --- HISTORY TABLE (Ledger Style) --- */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1.5rem;
         }
 
-        @media (max-width: 768px) {
-            .plan-price {
-                font-size: 2.5rem;
+        .history-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .ledger-container {
+            background: rgba(15, 15, 17, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .ledger-row {
+            display: grid;
+            grid-template-columns: 1.2fr 2fr 1fr;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .ledger-row:last-child {
+            border-bottom: none;
+        }
+
+        .ledger-row:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .ledger-header {
+            background: rgba(255,255,255,0.03);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .l-amount {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .l-date {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .l-id {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-family: 'Roboto Mono', monospace;
+            opacity: 0.7;
+        }
+
+        .l-status {
+            text-align: right;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(14, 203, 129, 0.15);
+            color: var(--color-success);
+            border: 1px solid rgba(14, 203, 129, 0.2);
+        }
+
+        .badge-pending {
+            background: rgba(240, 185, 11, 0.15);
+            color: var(--color-warning);
+            border: 1px solid rgba(240, 185, 11, 0.2);
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* --- ALERTS --- */
+        .alert-custom {
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid;
+            backdrop-filter: blur(10px);
+        }
+        
+        .alert-success-custom {
+            background: rgba(14, 203, 129, 0.1);
+            color: var(--color-success);
+            border-color: rgba(14, 203, 129, 0.2);
+        }
+        
+        .alert-error-custom {
+            background: rgba(246, 70, 93, 0.1);
+            color: var(--color-error);
+            border-color: rgba(246, 70, 93, 0.2);
+        }
+
+        /* Mobile Responsive */
+        @media(max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+            .nav-links {
+                display: none; /* Hidden on mobile for simplicity */
+            }
+            .ledger-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .l-status {
+                text-align: left;
             }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-brain me-2"></i>AI Consultant
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">
-                            <i class="fas fa-home me-1"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('billing') }}">
-                            <i class="fas fa-credit-card me-1"></i> Billing
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-chart-line me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">
-                            <i class="fas fa-sign-out-alt me-1"></i> Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-brain"></i> AI Consultant
+        </a>
+        <div class="nav-links">
+            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link active" href="{{ url_for('billing') }}">Billing</a>
+            <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
         </div>
     </nav>
 
-    <div class="container billing-container">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="mb-3"><i class="fas fa-credit-card me-2"></i>Billing & Plans</h1>
-                <p class="text-muted">Manage your subscription and view payment history</p>
-            </div>
-        </div>
-
+    <div class="container">
+        
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
                     <div class="alert-custom alert-{{ 'success' if category == 'success' else 'error' }}-custom">
-                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }} me-2"></i>
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <div class="current-plan-banner">
-            <h4 class="mb-2"><i class="fas fa-crown me-2"></i>Current Plan</h4>
-            <p class="mb-0">
-                {% if current_user.is_premium %}
-                    <strong>Premium Plan</strong> - 
-                    {% if current_user.subscription_end %}
-                        Expires: {{ current_user.subscription_end.strftime('%Y-%m-%d') }}
-                    {% else %}
-                        Active
-                    {% endif %}
-                {% else %}
-                    <strong>Free Plan</strong> - {{ current_user.remaining_consultations() }} consultations remaining
-                {% endif %}
-            </p>
+        <!-- Header -->
+        <div class="header-section">
+            <h1 class="page-title">Subscription</h1>
+            <p class="page-desc">Manage your billing cycle and transaction history.</p>
         </div>
 
-        <div class="row g-4 mb-5">
-            <div class="col-md-6">
-                <div class="plan-card">
-                    <div class="plan-icon">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <h3 class="plan-title">Free Plan</h3>
-                    <div class="plan-price">$0</div>
-                    <div class="plan-period">forever</div>
-                    
-                    <ul class="plan-features">
-                        <li><i class="fas fa-check"></i>3 Consultations per month</li>
-                        <li><i class="fas fa-check"></i>Basic market analysis</li>
-                        <li><i class="fas fa-check"></i>Strategic recommendations</li>
-                        <li><i class="fas fa-check"></i>Standard support</li>
-                        <li><i class="fas fa-times text-muted"></i>Advanced reports</li>
-                    </ul>
-                    
-                    <button class="btn-plan btn-plan-outline" {% if not current_user.is_premium %}disabled{% endif %}>
-                        {% if current_user.is_premium %}Current Plan{% else %}Current Plan{% endif %}
-                    </button>
+        <!-- Current Plan (Binance Gold Highlight) -->
+        <div class="spotlight-card current-plan-card" onmousemove="handleMouseMove(event)">
+            <div class="status-row">
+                <div class="status-icon-box">
+                    <i class="fas fa-crown"></i>
                 </div>
+                <div class="status-info">
+                    <h4>Current Plan</h4>
+                    <p>
+                        {% if current_user.is_premium %}
+                            Premium Plan
+                        {% else %}
+                            Free Plan
+                        {% endif %}
+                        <span class="status-meta">
+                            {% if current_user.is_premium %}
+                                {% if current_user.subscription_end %}
+                                    - Expires: {{ current_user.subscription_end.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    - Active
+                                {% endif %}
+                            {% else %}
+                                - {{ current_user.remaining_consultations() }} consultations remaining
+                            {% endif %}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Grid -->
+        <div class="pricing-grid">
+            
+            <!-- Free Plan -->
+            <div class="spotlight-card" onmousemove="handleMouseMove(event)">
+                <div class="plan-header">
+                    <div class="plan-name">
+                        <i class="fas fa-cube" style="color: var(--text-muted)"></i>
+                        Free Plan
+                    </div>
+                    <div class="plan-price">$0 <span>/ forever</span></div>
+                </div>
+                
+                <ul class="feature-list">
+                    <li class="feature-item active"><i class="fas fa-check"></i> 3 Consultations per month</li>
+                    <li class="feature-item active"><i class="fas fa-check"></i> Basic market analysis</li>
+                    <li class="feature-item active"><i class="fas fa-check"></i> Strategic recommendations</li>
+                    <li class="feature-item active"><i class="fas fa-check"></i> Standard support</li>
+                    <li class="feature-item"><i class="fas fa-times"></i> <span style="color: var(--text-muted)">Advanced reports</span></li>
+                </ul>
+                
+                <button class="btn btn-ghost" {% if not current_user.is_premium %}disabled{% endif %}>
+                    {% if current_user.is_premium %}Downgrade{% else %}Current Plan{% endif %}
+                </button>
             </div>
             
-            <div class="col-md-6">
-                <div class="plan-card premium">
-                    <div class="plan-icon">
-                        <i class="fas fa-crown"></i>
+            <!-- Premium Plan -->
+            <div class="spotlight-card" style="border-color: rgba(252, 213, 53, 0.4);" onmousemove="handleMouseMove(event)">
+                <div class="plan-badge">Popular</div>
+                <div class="plan-header">
+                    <div class="plan-name" style="color: var(--brand-gold)">
+                        <i class="fas fa-rocket"></i>
+                        Premium Plan
                     </div>
-                    <h3 class="plan-title">Premium Plan</h3>
-                    <div class="plan-price">$9.99</div>
-                    <div class="plan-period">per month</div>
-                    
-                    <ul class="plan-features">
-                        <li><i class="fas fa-infinity"></i>Unlimited consultations</li>
-                        <li><i class="fas fa-check"></i>Advanced market analysis</li>
-                        <li><i class="fas fa-check"></i>Strategic recommendations</li>
-                        <li><i class="fas fa-check"></i>Priority support</li>
-                        <li><i class="fas fa-check"></i>Professional reports</li>
-                        <li><i class="fas fa-check"></i>Email delivery</li>
-                    </ul>
-                    
-                    {% if current_user.is_premium %}
-                        <button class="btn-plan btn-plan-primary" disabled>
-                            <i class="fas fa-check me-2"></i>Active
-                        </button>
-                    {% else %}
-                        <form method="POST" action="{{ url_for('upgrade') }}">
-                            <input type="hidden" name="amount" value="9.99">
-                            <input type="hidden" name="payment_method" value="credit_card">
-                            <button type="submit" class="btn-plan btn-plan-primary">
-                                <i class="fas fa-arrow-up me-2"></i>Upgrade Now
-                            </button>
-                        </form>
-                    {% endif %}
+                    <div class="plan-price" style="color: var(--text-main)">$9.99 <span>/ month</span></div>
                 </div>
+                
+                <ul class="feature-list">
+                    <li class="feature-item gold"><i class="fas fa-infinity"></i> Unlimited consultations</li>
+                    <li class="feature-item gold"><i class="fas fa-check"></i> Advanced market analysis</li>
+                    <li class="feature-item gold"><i class="fas fa-check"></i> Strategic recommendations</li>
+                    <li class="feature-item gold"><i class="fas fa-check"></i> Priority support</li>
+                    <li class="feature-item gold"><i class="fas fa-check"></i> Professional reports</li>
+                    <li class="feature-item gold"><i class="fas fa-check"></i> Email delivery</li>
+                </ul>
+                
+                {% if current_user.is_premium %}
+                    <button class="btn btn-gold" disabled>
+                        <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Active
+                    </button>
+                {% else %}
+                    <form method="POST" action="{{ url_for('upgrade') }}">
+                        <input type="hidden" name="amount" value="9.99">
+                        <input type="hidden" name="payment_method" value="credit_card">
+                        <button type="submit" class="btn btn-gold">
+                            Upgrade Now <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                        </button>
+                    </form>
+                {% endif %}
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-12">
-                <h3 class="mb-4"><i class="fas fa-history me-2"></i>Payment History</h3>
-                
+        <!-- Transaction History -->
+        <div class="history-section">
+            <div class="history-header">
+                <h3>Payment History</h3>
+            </div>
+
+            <div class="ledger-container">
                 {% if billing_history %}
+                    <!-- Header Row -->
+                    <div class="ledger-row ledger-header">
+                        <div>Amount</div>
+                        <div>Date & Transaction ID</div>
+                        <div style="text-align: right;">Status</div>
+                    </div>
+
                     {% for billing in billing_history %}
-                        <div class="history-card">
-                            <div class="row align-items-center">
-                                <div class="col-md-4">
-                                    <div class="history-amount">
-                                        ${{ billing_amount }} {{ billing.currency }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="history-date">
-                                        <i class="far fa-clock me-1"></i>
-                                        {{ billing.created_at.strftime('%Y-%m-%d %H:%M') }}
-                                    </div>
-                                    <small class="text-muted">ID: {{ billing.transaction_id[:16] }}...</small>
-                                </div>
-                                <div class="col-md-4 text-md-end">
-                                    <span class="status-badge status-{{ 'success' if billing.status == 'completed' else 'pending' }}">
-                                        <i class="fas fa-{{ 'check' if billing.status == 'completed' else 'spinner fa-spin' }} me-1"></i>
-                                        {{ billing.status|capitalize }}
-                                    </span>
-                                </div>
+                        <div class="ledger-row">
+                            <div class="l-amount">${{ billing_amount }} {{ billing.currency }}</div>
+                            <div>
+                                <div class="l-date">{{ billing.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                <div class="l-id">{{ billing.transaction_id[:16] }}...</div>
+                            </div>
+                            <div class="l-status">
+                                <span class="badge badge-{{ 'success' if billing.status == 'completed' else 'pending' }}">
+                                    <i class="fas fa-{{ 'check' if billing.status == 'completed' else 'circle-notch fa-spin' }}"></i>
+                                    {{ billing.status|capitalize }}
+                                </span>
                             </div>
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="text-center text-muted py-5">
-                        <i class="fas fa-receipt fa-3x mb-3"></i>
-                        <p>No payment history yet</p>
+                    <div class="empty-state">
+                        <i class="fas fa-receipt" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                        <p>No payment history available</p>
                     </div>
                 {% endif %}
             </div>
         </div>
+
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple Aceternity-style Spotlight Effect
+        function handleMouseMove(e) {
+            const card = e.currentTarget;
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        }
+    </script>
 </body>
 </html>
